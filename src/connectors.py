@@ -171,9 +171,6 @@ class VacancyTxtConnector(VacancyFileConnector):
 
                 vac_dic = json.loads(str(vacancy_line.strip("\r""\n").replace("'", '"')))
 
-                for k, v in vac_dic.items():
-                    print(f"<key=>{k}\n<value=>{v}")
-
                 v = Vacancy.deserialize(vac_dic)
                 vacancy_list.append(v)
 

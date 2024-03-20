@@ -8,35 +8,33 @@ from src.connectors import VacancyFileConnector
 
 
 def user_interaction():
+    what_to_do = input("Выберите формат файла для сохранения данных: \n"
+                       "TXT (vacancy.txt) (1) \n"
+                       "CSV (vacancy.csv) (2) \n"
+                       "JSON (vacancy.json) (3) (default) \n")
+
+    if what_to_do == '1':
+        file_connector = VacancyTxtConnector()
+    elif what_to_do == '2':
+        file_connector = VacancyCsvConnector()
+    else:
+        file_connector = VacancyJsonConnector()
+
     what_to_do = input(" Сделать запрос с HH.ru (1) \n"
-                       " Загрузить вакансии из файла JSON (2) \n"
-                       " Загрузить вакансии из файла CSV (3) \n"
-                       " Загрузить вакансии из файла TXT (4) \n"
-                       " Загрузить из файла JSON и отфильтровать (5) \n"
-                       " Загрузить из файла CSV и отфильтровать (6) \n"
-                       " Загрузить из файла TXT и отфильтровать (7) \n Выход (8) \n")
+                       " Загрузить вакансии из файла (2) \n"
+                       " Загрузить из файла и отфильтровать (3) \n")
 
     # vacancy_list = []
-    json_connector = VacancyJsonConnector()
-    csv_connector = VacancyCsvConnector()
-    txt_connector = VacancyTxtConnector()
+    # json_connector = VacancyJsonConnector()
+    # csv_connector = VacancyCsvConnector()
+    # txt_connector = VacancyTxtConnector()
 
     if what_to_do == '1':
         vacancy_list = get_request_info(user_input(True), 'HeadHunter')
     elif what_to_do == '2':
-        vacancy_list = open_file(json_connector)
+        vacancy_list = open_file(file_connector)
     elif what_to_do == '3':
-        vacancy_list = open_file(csv_connector)
-    elif what_to_do == '4':
-        vacancy_list = open_file(txt_connector)
-    elif what_to_do == '5':
-        vacancy_list = open_file(json_connector)
-        vacancy_list = Vacancy.apply_filters(vacancy_list, user_input(False))
-    elif what_to_do == '6':
-        vacancy_list = open_file(csv_connector)
-        vacancy_list = Vacancy.apply_filters(vacancy_list, user_input(False))
-    elif what_to_do == '7':
-        vacancy_list = open_file(txt_connector)
+        vacancy_list = open_file(file_connector)
         vacancy_list = Vacancy.apply_filters(vacancy_list, user_input(False))
     else:
         exit(0)
@@ -46,38 +44,37 @@ def user_interaction():
     while True:
 
         what_to_do = input(" Отфильтровать (1) \n Удалить дубликаты (2) \n"
-                           " Пере-сохранить в файл JSON (3) \n Добавить в файл JSON (4)\n"
-                           " Загрузить вакансии из файла JSON (5) \n"
-                           " Пере-сохранить в файл CSV (6) \n Добавить в CSV-файл (7) \n"
-                           " Загрузить вакансии из файла CSV (8) \n"
-                           " Пере-сохранить в файл TXT (9) \n Добавить в TXT-файл (10) \n"
-                           " Загрузить вакансии из файла TXT (11) \n Выход (12) \n")
+                           " Пере-сохранить в файл (3) \n Добавить в файл (4)\n"
+                           " Загрузить вакансии из файла (5) \n"
+                           " Удалить конкретную вакансию (вакансии) из списка (6) \n"
+                           " Выход БЕЗ СОХРАНЕНИЯ (7) \n"
+                           " СОХРАНИТЬ результаты и выйти (8) \n")
 
         if what_to_do == '1':
             vacancy_list = Vacancy.apply_filters(vacancy_list, user_input(False))
         elif what_to_do == '2':
             vacancy_list = Vacancy.remove_duplicates(vacancy_list)
         elif what_to_do == '3':
-            save_to_file(vacancy_list, json_connector, True)
+            save_to_file(vacancy_list, file_connector, True)
         elif what_to_do == '4':
-            save_to_file(vacancy_list, json_connector, False)
+            save_to_file(vacancy_list, file_connector, False)
         elif what_to_do == '5':
-            vacancy_list = open_file(json_connector)
+            vacancy_list = open_file(file_connector)
         elif what_to_do == '6':
-            save_to_file(vacancy_list, csv_connector, True)
+            v_list = verify_list(input("Номера вакансий, которые вы хотите удалить (введите номера через пробел)"),
+                                 len(vacancy_list))
+            print(v_list)
+            if v_list:
+                v_deleted = [vacancy for number, vacancy in enumerate(vacancy_list, start=1) if number in v_list]
+                print("Будут удалены следующие вакансии: ")
+                [print(f"{v_del[0]}) {v_del[1]}") for v_del in zip(v_list, v_deleted)]
+                if input("Удалить? Y/N") not in ['т', 'T', 'N', 'n']:
+                    vacancy_list = [v for num, v in enumerate(vacancy_list, start=1) if num not in v_list]
+
         elif what_to_do == '7':
-            csv_connector = VacancyCsvConnector()
-            save_to_file(vacancy_list, csv_connector, False)
+            exit(0)
         elif what_to_do == '8':
-            vacancy_list = open_file(csv_connector)
-        elif what_to_do == '9':
-            save_to_file(vacancy_list, txt_connector, True)
-        elif what_to_do == '10':
-            csv_connector = VacancyCsvConnector()
-            save_to_file(vacancy_list, txt_connector, False)
-        elif what_to_do == '11':
-            vacancy_list = open_file(txt_connector)
-        elif what_to_do == '12':
+            save_to_file(vacancy_list, file_connector, True)
             exit(0)
         else:
             pass
@@ -171,6 +168,30 @@ def get_request_info(parameters_input, api_type: str = 'HeadHunter') -> list[Vac
             vacancy_list = HhApi.return_vacancy_list_from_json(res)
             return vacancy_list
             # [print(v) for v in vacancy_list]
+
+
+def verify_list(vac_numbers: str, list_length: int) -> list[int] | None:
+    """
+    Обрабатывает и верифицирует список номеров вакансий, которые надо удалить
+    :param list_length:
+    :param vac_numbers: list[int] | None:
+    :return: str
+    """
+    try:
+        vac_list = [int(v) for v in vac_numbers.split(' ')]
+
+        # bool_sum - число вакансий, номер которых превышает длину списка
+        bool_sum = sum([(v > list_length) for v in vac_list])
+        if bool_sum > 0:
+            print(bool_sum)
+            raise IndexError
+        return vac_list
+    except ValueError:
+        print("Ошибка ValueError. Номер/номера удаляемых вакансий должны быть числами, разделенными пробелом")
+        return None
+    except IndexError:
+        print("Ошибка IndexError. Номер удаляемой вакансии должен быть в пределах списка вакансий")
+        return None
 
 
 def open_file(connector: VacancyFileConnector) -> list[Vacancy]:
